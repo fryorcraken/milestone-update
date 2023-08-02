@@ -1,0 +1,22 @@
+{
+  "name": "milestone-update",
+  "version": "1.0.0",
+  "description": "Get and condense last update comment on milestone issues",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fryorcraken/milestone-update.git"
+  },
+  "author": "fryorcraken",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fryorcraken/milestone-update/issues"
+  },
+  "homepage": "https://github.com/fryorcraken/milestone-update#readme",
+  "dependencies": {
+    "octokit": "^3.1.0"
+  }
+}
