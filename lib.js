@@ -1,5 +1,3 @@
-const {Octokit} = require("octokit");
-
 // Foolproof regex
 const WAKU_UPDATE_RE = /\*\*weekly *update\*\*/i
 const LB = "\n"
