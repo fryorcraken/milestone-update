@@ -50,12 +50,20 @@ function formatProjectName(org) {
     return projectName[0].toUpperCase() + projectName.substring(1)
 }
 
-async function getLastWeekCommentsNewestFirst(octokit, milestone, repo, lastWeek) {
+function lastWeekIso() {
+    const lastWeek = new Date()
+    const lastWeekInt = (lastWeek).getDate() - 7;
+    lastWeek.setDate(lastWeekInt);
+
+    return lastWeek.toISOString()
+}
+
+async function getNewestCommentFirst(octokit, milestone, repo, since) {
     const res = await octokit.request(milestone.comments_url, {
         owner: milestone.owner,
         repo: repo.name,
         issue_number: milestone.number,
-        since: lastWeek,
+        since: since,
         headers: {
             'X-GitHub-Api-Version': '2022-11-28'
         }
@@ -96,7 +104,7 @@ async function main() {
 
         // For each milestone, get the waku update
         for (const milestone of milestones) {
-            const comments = await getLastWeekCommentsNewestFirst(octokit, milestone, repo, lastWeek);
+            const comments = await getNewestCommentFirst(octokit, milestone, repo, lastWeek);
 
             let weeklyUpdate
             for (const comment of comments) {
@@ -140,11 +148,5 @@ async function main() {
     console.log("UPDATE:\n" + text)
 }
 
-function lastWeekIso() {
-    const lastWeek = new Date()
-    const lastWeekInt = (lastWeek).getDate() - 7;
-    lastWeek.setDate(lastWeekInt);
 
-    return lastWeek.toISOString()
-}
 main().then(() => console.log("done."));
