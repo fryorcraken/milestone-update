@@ -98,7 +98,7 @@ async function main() {
 
         // Add milestones updates
         for (const a of updates[repo.name]) {
-            text += "**" + a.milestone.title + "**" + LB
+            text += "**[" + a.milestone.title + "](" + a.milestone.html_url + ")**" + LB
             text += a.update + LB
         }
     }
