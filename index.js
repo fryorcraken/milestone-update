@@ -1,4 +1,3 @@
-const {Octokit} = require("octokit");
 const {
     getRepos, getMilestones, lastWeekIso, getNewestCommentFirst, isWeeklyUpdateComment, cleanUpdate, formatWeeklyReport,
     getOctokit, formatMilestoneList
@@ -72,9 +71,6 @@ async function list() {
 
     // Get all repositories
     const repos = await getRepos(octokit, ORG);
-
-    // Create `update` object, one entry per repo
-    const updates = {}
 
     const repoMilestones = new Map()
 
