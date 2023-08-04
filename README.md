@@ -10,5 +10,8 @@ git clone https://github.com/fryorcraken/milestone-update.git
 cd milestone-update
 npm i
 export GH_TOKEN=<GitHub Token with `repo` or `repo_public` scope>
-node ./index.js
+# Print weekly update
+node ./index.js weekly
+# List all miletones
+node ./index.js list
 ```

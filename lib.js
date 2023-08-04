@@ -1,6 +1,22 @@
 // Foolproof regex
+const {Octokit} = require("octokit");
 const WAKU_UPDATE_RE = /\*\*weekly *update\*\*/i
 const LB = "\n"
+
+function getOctokit() {
+    const TOKEN = process.env.GH_TOKEN
+
+    if (!TOKEN) {
+        throw new Error("GitHub Token needed to access repo comments." +
+            " Use `repo` scope for public and private repositories," +
+            "`public_repo` for only public repositories")
+    }
+
+    const octokit = new Octokit({
+        auth: TOKEN
+    });
+    return octokit;
+}
 
 async function getMilestones(octokit, org, repo) {
     const res = await octokit.request(`GET /repos/${repo.full_name}/issues`, {
@@ -73,6 +89,10 @@ async function getNewestCommentFirst(octokit, milestone, repo, since) {
     return res.data.reverse()
 }
 
+function formatMilestoneTitleWithUrl(milestone) {
+    return "[" + milestone.title + "](" + milestone.html_url + ")";
+}
+
 function formatWeeklyReport(owner, repos, updates) {
     let text = ""
     let projectName = formatProjectName(owner);
@@ -89,13 +109,36 @@ function formatWeeklyReport(owner, repos, updates) {
 
         // Add milestones updates
         for (const a of updates[repo.name]) {
-            text += "**[" + a.milestone.title + "](" + a.milestone.html_url + ")**" + LB
+            text += "**" + formatMilestoneTitleWithUrl(a.milestone) + "**" + LB
             text += a.update + LB
         }
     }
     return text + LB + "---" + LB
 }
 
+function formatMilestoneList(repoMilestones) {
+    let text = ""
+
+    repoMilestones.forEach((milestones, repoFullName) => {
+        if (milestones.length > 0) {
+            text += repoFullName + LB
+            milestones.forEach((milestone) => {
+                text += "  " + formatMilestoneTitleWithUrl(milestone) + LB
+            })
+        }
+    })
+
+    return text;
+}
+
 module.exports = {
-    getRepos, getMilestones, lastWeekIso, getNewestCommentFirst, isWeeklyUpdateComment, cleanUpdate, formatWeeklyReport
+    getRepos,
+    getMilestones,
+    lastWeekIso,
+    getNewestCommentFirst,
+    isWeeklyUpdateComment,
+    cleanUpdate,
+    formatWeeklyReport,
+    getOctokit,
+    formatMilestoneList
 }

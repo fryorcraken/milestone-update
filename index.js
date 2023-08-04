@@ -1,21 +1,26 @@
 const {Octokit} = require("octokit");
 const {
-    getRepos, getMilestones, lastWeekIso, getNewestCommentFirst, isWeeklyUpdateComment, cleanUpdate, formatWeeklyReport
+    getRepos, getMilestones, lastWeekIso, getNewestCommentFirst, isWeeklyUpdateComment, cleanUpdate, formatWeeklyReport,
+    getOctokit, formatMilestoneList
 } = require("./lib");
+const {program} = require('commander');
 
+program.name("milestone")
+program.command("weekly")
+    .description("print weekly update report")
+    .action(async() => {
+        await weekly()
+    })
+program.command("list")
+    .description("list milestones")
+    .action(async () => {
+        await list()
+    })
 
-async function main() {
-    const TOKEN = process.env.GH_TOKEN
+program.parse()
 
-    if (!TOKEN) {
-        throw new Error("GitHub Token needed to access repo comments." +
-            " Use `repo` scope for public and private repositories," +
-            "`public_repo` for only public repositories")
-    }
-
-    const octokit = new Octokit({
-        auth: TOKEN
-    });
+async function weekly() {
+    const octokit = getOctokit();
 
     const ORG = "waku-org"
 
@@ -60,5 +65,27 @@ async function main() {
     console.log("UPDATE:\n" + text)
 }
 
+async function list() {
+    const octokit = getOctokit();
 
-main().then(() => console.log("done."));
+    const ORG = "waku-org"
+
+    // Get all repositories
+    const repos = await getRepos(octokit, ORG);
+
+    // Create `update` object, one entry per repo
+    const updates = {}
+
+    const repoMilestones = new Map()
+
+    for (const repo of repos) {
+        // Get all milestones from the repository.
+        const milestones = await getMilestones(octokit, ORG, repo)
+
+        repoMilestones.set(repo.full_name, milestones)
+    }
+
+    const text = formatMilestoneList(repoMilestones);
+
+    console.log(text)
+}
