@@ -90,7 +90,8 @@ async function getNewestCommentFirst(octokit, milestone, repo, since) {
 }
 
 function formatMilestoneTitleWithUrl(milestone) {
-    return "[" + milestone.title + "](" + milestone.html_url + ")";
+    const title = milestone.title.replace(/\[milestone\] ?/i, "")
+    return "[" + title + "](" + milestone.html_url + ")";
 }
 
 function formatWeeklyReport(owner, repos, updates) {
