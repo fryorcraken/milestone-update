@@ -35,7 +35,8 @@ async function getRepos(octokit, owner) {
         org: 'owner',
         headers: {
             'X-GitHub-Api-Version': '2022-11-28'
-        }
+        },
+        per_page: 50
     })
     if (!res.data) throw new Error(`Failed to get repos for ${owner}: ${res}`)
     return res.data
