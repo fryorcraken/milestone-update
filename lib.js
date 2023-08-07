@@ -46,7 +46,7 @@ function isWeeklyUpdateComment(comment) {
 }
 
 function cleanUpdate(update) {
-    return  update.replace(WAKU_UPDATE_RE, "").replace(/^\s*[\r\n]/gm, "")
+    return update.replace(WAKU_UPDATE_RE, "").replace(/^\s*[\r\n]$/gm, "")
 }
 
 function formatProjectName(org) {
