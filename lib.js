@@ -46,18 +46,7 @@ function isWeeklyUpdateComment(comment) {
 }
 
 function cleanUpdate(update) {
-    let clean = ""
-    const a = update.split("\n")
-    for (const l of a) {
-        if (l.search(WAKU_UPDATE_RE) !== -1) {
-            continue
-        }
-        if (l.search(/^ *\n$/) !== -1) {
-            continue
-        }
-        clean += l.trim().replace(/\n/, "") + LB
-    }
-    return clean
+    return  update.replace(WAKU_UPDATE_RE, "").replace(/^\s*[\r\n]/gm, "")
 }
 
 function formatProjectName(org) {
@@ -93,9 +82,19 @@ function formatMilestoneTitleWithUrl(milestone) {
     return "[" + title + "](" + milestone.html_url + ")";
 }
 
+function getMonday( ) {
+    let date = new Date();
+    const day = date.getDay() || 7;
+    if( day !== 1 )
+        date.setHours(-24 * (day - 1));
+    return date;
+}
+
 function formatWeeklyReport(owner, repos, updates) {
     let text = ""
     let projectName = formatProjectName(owner);
+
+    text += getMonday().toISOString().substring(0, 10) + " " + projectName + " weekly" + LB
 
     // Format updates
     for (const repo of repos) {
@@ -103,17 +102,15 @@ function formatWeeklyReport(owner, repos, updates) {
             continue
         }
         text += "---" + LB
-        text += projectName + LB
-        text += repo.name + LB
-        text += "Highlight: **please fill highlight of past week**" + LB + LB
+        text += repo.name + LB + LB
 
         // Add milestones updates
         for (const {milestone, update} of updates[repo.name]) {
             text += "**" + formatMilestoneTitleWithUrl(milestone) + "**" + " {" + getEpicLabel(milestone) + "}" + LB
-            text += update + LB
+            text += update + LB + LB
         }
     }
-    return text + LB + "---" + LB
+    return text + "---" + LB
 }
 
 function formatMilestoneList(repoMilestones) {

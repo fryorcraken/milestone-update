@@ -61,7 +61,7 @@ async function weekly() {
     }
     const text = formatWeeklyReport(ORG, repos, updates);
 
-    console.log("UPDATE:\n" + text)
+    console.log(text)
 }
 
 async function list() {
