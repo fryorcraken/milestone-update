@@ -12,10 +12,9 @@ function getOctokit() {
             "`public_repo` for only public repositories")
     }
 
-    const octokit = new Octokit({
+    return new Octokit({
         auth: TOKEN
     });
-    return octokit;
 }
 
 async function getMilestones(octokit, org, repo) {
@@ -90,7 +89,7 @@ async function getNewestCommentFirst(octokit, milestone, repo, since) {
 }
 
 function formatMilestoneTitleWithUrl(milestone) {
-    const title = milestone.title.replace(/\[?milestone\]?:? ?/i, "")
+    const title = milestone.title.replace(/\[?milestone]?:? +/i, "")
     return "[" + title + "](" + milestone.html_url + ")";
 }
 
@@ -109,9 +108,9 @@ function formatWeeklyReport(owner, repos, updates) {
         text += "Highlight: **please fill highlight of past week**" + LB + LB
 
         // Add milestones updates
-        for (const a of updates[repo.name]) {
-            text += "**" + formatMilestoneTitleWithUrl(a.milestone) + "**" + LB
-            text += a.update + LB
+        for (const {milestone, update} of updates[repo.name]) {
+            text += "**" + formatMilestoneTitleWithUrl(milestone) + "**" + " {" + getEpicLabel(milestone) + "}" + LB
+            text += update + LB
         }
     }
     return text + LB + "---" + LB
@@ -124,12 +123,23 @@ function formatMilestoneList(repoMilestones) {
         if (milestones.length > 0) {
             text += repoFullName + LB
             milestones.forEach((milestone) => {
-                text += "  " + formatMilestoneTitleWithUrl(milestone) + LB
+                text += "  " + formatMilestoneTitleWithUrl(milestone) + " {" + getEpicLabel(milestone) + "}" + LB
             })
         }
     })
 
     return text;
+}
+
+function getEpicLabel(milestone) {
+    let epicLabel = "NO EPIC"
+    for (const {name} of milestone.labels) {
+        if (name.startsWith("E:")) {
+            epicLabel = name;
+            break
+        }
+    }
+    return epicLabel;
 }
 
 module.exports = {
