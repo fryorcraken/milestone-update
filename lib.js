@@ -97,6 +97,8 @@ function formatWeeklyReport(owner, repos, updates) {
 
     text += getMonday().toISOString().substring(0, 10) + " " + projectName + " weekly" + LB
 
+    repos.sort(compareRepos)
+
     // Format updates
     for (const repo of repos) {
         if (!updates[repo.name] || !updates[repo.name].length) {
@@ -129,6 +131,12 @@ function formatMilestoneList(repoMilestones) {
     return text;
 }
 
+const REPOS_IN_ORDER = ["internal-waku-outreach", "docs.waku.org", "research", "nwaku", "js-waku", "go-waku"]
+
+function compareRepos(repoA, repoB) {
+    return REPOS_IN_ORDER.indexOf(repoA.name) - REPOS_IN_ORDER.indexOf(repoB.name);
+}
+
 function getEpicLabel(milestone) {
     let epicLabel = "NO EPIC"
     for (const {name} of milestone.labels) {
@@ -140,14 +148,14 @@ function getEpicLabel(milestone) {
     return epicLabel;
 }
 
-const repoTeamMap = new Map([
+const REPO_TEAM_MAP = new Map([
     ["docs.waku.org", "Docs"],
     ["internal-waku-outreach", "Eco Dev"],
     ["research", "Research"]
 ])
 
 function mapToTeamName(repo) {
-    const teamName = repoTeamMap.get(repo);
+    const teamName = REPO_TEAM_MAP.get(repo);
     return teamName ?? repo
 }
 
