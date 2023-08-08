@@ -17,14 +17,29 @@ function getOctokit() {
     });
 }
 
-async function getMilestones(octokit, org, repo) {
+async function getEpics(octokit, org) {
+    const res = await octokit.request(`GET /repos/${org}/pm/issues`, {
+        owner: org,
+        repo: "pm",
+        labels: "epic",
+        headers: {
+            'X-GitHub-Api-Version': '2022-11-28'
+        }
+    })
+    if (!res.data) throw new Error(`Failed to get issues for ${repo.full_name}: ${res}`)
+    return res.data
+}
+
+
+async function getMilestones(octokit, org, repo, options) {
     const res = await octokit.request(`GET /repos/${repo.full_name}/issues`, {
         owner: org,
         repo: repo.name,
         labels: "milestone",
         headers: {
             'X-GitHub-Api-Version': '2022-11-28'
-        }
+        },
+        ...options
     })
     if (!res.data) throw new Error(`Failed to get issues for ${repo.full_name}: ${res}`)
     return res.data
@@ -131,6 +146,32 @@ function formatMilestoneList(repoMilestones) {
     return text;
 }
 
+function formatCheckBox(issue) {
+    if (issue.state === 'open') {
+        return "- [ ] "
+    } else {
+        return "- [x] "
+    }
+}
+
+function formatMilestoneByEpicList(epics, epicMilestones) {
+    let text = ""
+
+    epics.forEach((epic) => {
+        text += "# " + formatMilestoneTitleWithUrl(epic) + LB + LB
+
+        const label = getEpicLabel(epic);
+
+        const milestones = epicMilestones.get(label) ?? []
+        for (const milestone of milestones) {
+            text += "  " + formatCheckBox(milestone) + milestone.repo_name + ": " + formatMilestoneTitleWithUrl(milestone) + LB
+        }
+        text += LB
+    })
+
+    return text;
+}
+
 const REPOS_IN_ORDER = ["internal-waku-outreach", "docs.waku.org", "research", "nwaku", "js-waku", "go-waku"]
 
 function compareRepos(repoA, repoB) {
@@ -167,6 +208,9 @@ module.exports = {
     isWeeklyUpdateComment,
     cleanUpdate,
     formatWeeklyReport,
+    getEpics,
+    getEpicLabel,
     getOctokit,
-    formatMilestoneList
+    formatMilestoneList,
+    formatMilestoneByEpicList
 }

@@ -14,4 +14,6 @@ export GH_TOKEN=<GitHub Token with `repo` or `repo_public` scope>
 node ./index.js weekly
 # List all miletones
 node ./index.js list
+# List milestones sorted by Epicc
+node ./index.js epics
 ```

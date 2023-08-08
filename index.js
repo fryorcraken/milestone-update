@@ -1,6 +1,6 @@
 const {
     getRepos, getMilestones, lastWeekIso, getNewestCommentFirst, isWeeklyUpdateComment, cleanUpdate, formatWeeklyReport,
-    getOctokit, formatMilestoneList
+    getOctokit, formatMilestoneList, getEpicLabel, getEpics, formatMilestoneByEpicList
 } = require("./lib");
 const {program} = require('commander');
 
@@ -14,6 +14,12 @@ program.command("list")
     .description("list milestones")
     .action(async () => {
         await list()
+    })
+
+program.command("epics")
+    .description("list by epics")
+    .action(async () => {
+        await listByEpic()
     })
 
 program.parse()
@@ -82,6 +88,42 @@ async function list() {
     }
 
     const text = formatMilestoneList(repoMilestones);
+
+    console.log(text)
+}
+
+async function listByEpic() {
+    const octokit = getOctokit();
+
+    const ORG = "waku-org"
+
+    // Get all repositories
+    const repos = await getRepos(octokit, ORG);
+
+    // Get all epiccs
+    const epics = await getEpics(octokit, ORG)
+
+    const epicMilestones = new Map()
+
+    for (const repo of repos) {
+        // Get all milestones from the repository.
+        const milestones = await getMilestones(octokit, ORG, repo, {state: "all"})
+
+        for (let milestone of milestones) {
+            const epicLabel = getEpicLabel(milestone)
+
+            milestone.repo_name = repo.name
+
+            let _m = epicMilestones.get(epicLabel)
+            if (!_m) {
+                _m = []
+            }
+            _m.push(milestone)
+            epicMilestones.set(epicLabel, _m)
+        }
+    }
+
+    const text = formatMilestoneByEpicList(epics, epicMilestones);
 
     console.log(text)
 }
