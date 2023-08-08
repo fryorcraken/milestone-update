@@ -103,7 +103,7 @@ function formatWeeklyReport(owner, repos, updates) {
             continue
         }
         text += "---" + LB
-        text += repo.name + LB + LB
+        text += mapToTeamName(repo.name) + LB + LB
 
         // Add milestones updates
         for (const {milestone, update} of updates[repo.name]) {
@@ -138,6 +138,17 @@ function getEpicLabel(milestone) {
         }
     }
     return epicLabel;
+}
+
+const repoTeamMap = new Map([
+    ["docs.waku.org", "Docs"],
+    ["internal-waku-outreach", "Eco Dev"],
+    ["research", "Research"]
+])
+
+function mapToTeamName(repo) {
+    const teamName = repoTeamMap.get(repo);
+    return teamName ?? repo
 }
 
 module.exports = {
