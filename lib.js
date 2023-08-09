@@ -93,9 +93,9 @@ async function getNewestCommentFirst(octokit, milestone, repo, since) {
     return res.data.reverse()
 }
 
-function formatMilestoneTitleWithUrl(milestone) {
-    const title = milestone.title.replace(/\[?milestone]?:? +/i, "")
-    return "[" + title + "](" + milestone.html_url + ")";
+function formatIssueTitleWithUrl(issue) {
+    const title = issue.title.replace(/\[?milestone]?:? +/i, "").replace(/\[?epic]?:? +/i, "")
+    return "[" + title + "](" + issue.html_url + ")";
 }
 
 function getMonday( ) {
@@ -124,7 +124,7 @@ function formatWeeklyReport(owner, repos, updates) {
 
         // Add milestones updates
         for (const {milestone, update} of updates[repo.name]) {
-            text += "**" + formatMilestoneTitleWithUrl(milestone) + "**" + " {" + getEpicLabel(milestone) + "}" + LB
+            text += "**" + formatIssueTitleWithUrl(milestone) + "**" + " {" + getEpicLabel(milestone) + "}" + LB
             text += update + LB + LB
         }
     }
@@ -138,7 +138,7 @@ function formatMilestoneList(repoMilestones) {
         if (milestones.length > 0) {
             text += repoFullName + LB
             milestones.forEach((milestone) => {
-                text += "  " + formatMilestoneTitleWithUrl(milestone) + " {" + getEpicLabel(milestone) + "}" + LB
+                text += "  " + formatIssueTitleWithUrl(milestone) + " {" + getEpicLabel(milestone) + "}" + LB
             })
         }
     })
@@ -158,13 +158,13 @@ function formatMilestoneByEpicList(epics, epicMilestones) {
     let text = ""
 
     epics.forEach((epic) => {
-        text += "# " + formatMilestoneTitleWithUrl(epic) + LB + LB
+        text += "# " + formatIssueTitleWithUrl(epic) + LB + LB
 
         const label = getEpicLabel(epic);
 
         const milestones = epicMilestones.get(label) ?? []
         for (const milestone of milestones) {
-            text += "  " + formatCheckBox(milestone) + milestone.repo_name + ": " + formatMilestoneTitleWithUrl(milestone) + LB
+            text += "  " + formatCheckBox(milestone) + milestone.repo_name + ": " + formatIssueTitleWithUrl(milestone) + LB
         }
         text += LB
     })
