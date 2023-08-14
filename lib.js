@@ -2,7 +2,7 @@
 const {Octokit} = require("octokit");
 const WAKU_UPDATE_RE = /\*\*weekly *update\*\*/i
 const LB = "\n"
-
+const NO_EPIC_LABEL = "NO EPIC LABEL"
 function getOctokit() {
     const TOKEN = process.env.GH_TOKEN
 
@@ -158,9 +158,9 @@ function formatMilestoneByEpicList(epics, epicMilestones) {
     let text = ""
 
     epics.forEach((epic) => {
-        text += "# " + formatIssueTitleWithUrl(epic) + LB + LB
-
         const label = getEpicLabel(epic);
+
+        text += "# " + formatIssueTitleWithUrl(epic) + " `" + label + "`" + LB
 
         const milestones = epicMilestones.get(label) ?? []
         for (const milestone of milestones) {
@@ -168,6 +168,16 @@ function formatMilestoneByEpicList(epics, epicMilestones) {
         }
         text += LB
     })
+
+
+    const milestones = epicMilestones.get(NO_EPIC_LABEL).filter(m => m.state === "open")
+    if (milestones) {
+        text += "# Orphan Milestones" + LB
+        for (const milestone of milestones) {
+            text += formatCheckBox(milestone) + milestone.repo_name + ": " + formatIssueTitleWithUrl(milestone) + LB
+        }
+        text += LB
+    }
 
     return text;
 }
@@ -179,7 +189,7 @@ function compareRepos(repoA, repoB) {
 }
 
 function getEpicLabel(milestone) {
-    let epicLabel = "NO EPIC"
+    let epicLabel = NO_EPIC_LABEL
     for (const {name} of milestone.labels) {
         if (name.startsWith("E:")) {
             epicLabel = name;
