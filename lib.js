@@ -1,6 +1,6 @@
 // Foolproof regex
 const {Octokit} = require("octokit");
-const WAKU_UPDATE_RE = /\*\*weekly *update\*\*/i
+const WEEKLY_UPDATE_RE = /\*\*weekly *update\*\*/i
 const LB = "\n"
 const NO_EPIC_LABEL = "NO EPIC LABEL"
 function getOctokit() {
@@ -17,10 +17,10 @@ function getOctokit() {
     });
 }
 
-async function getEpics(octokit, org) {
-    const res = await octokit.request(`GET /repos/${org}/pm/issues`, {
+async function getEpics(octokit, org, epicRepo) {
+    const res = await octokit.request(`GET /repos/${org}/${epicRepo}/issues`, {
         owner: org,
-        repo: "pm",
+        repo: epicRepo,
         labels: "epic",
         headers: {
             'X-GitHub-Api-Version': '2022-11-28'
@@ -58,11 +58,11 @@ async function getRepos(octokit, owner) {
 }
 
 function isWeeklyUpdateComment(comment) {
-    return comment.body.search(WAKU_UPDATE_RE) !== -1
+    return comment.body.search(WEEKLY_UPDATE_RE) !== -1
 }
 
 function cleanUpdate(update) {
-    return update.replace(WAKU_UPDATE_RE, "").replace(/^\s*[\r\n]$/gm, "")
+    return update.replace(WEEKLY_UPDATE_RE, "").replace(/^\s*[\r\n]$/gm, "")
 }
 
 function formatProjectName(org) {
@@ -79,10 +79,10 @@ function lastWeekIso() {
     return lastWeek.toISOString()
 }
 
-async function getNewestCommentFirst(octokit, milestone, repo, since) {
+async function getNewestCommentFirst(octokit, milestone, repoName, since) {
     const res = await octokit.request(milestone.comments_url, {
         owner: milestone.owner,
-        repo: repo.name,
+        repo: repoName,
         issue_number: milestone.number,
         since: since,
         headers: {
