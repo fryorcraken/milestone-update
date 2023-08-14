@@ -71,9 +71,9 @@ function formatProjectName(org) {
     return projectName[0].toUpperCase() + projectName.substring(1)
 }
 
-function lastWeekIso() {
+function lastFiveDaysIso() {
     const lastWeek = new Date()
-    const lastWeekInt = (lastWeek).getDate() - 7;
+    const lastWeekInt = (lastWeek).getDate() - 5;
     lastWeek.setDate(lastWeekInt);
 
     return lastWeek.toISOString()
@@ -214,7 +214,7 @@ function mapToTeamName(repo) {
 module.exports = {
     getRepos,
     getMilestones,
-    lastWeekIso,
+    lastWeekIso: lastFiveDaysIso,
     getNewestCommentFirst,
     isWeeklyUpdateComment,
     cleanUpdate,
