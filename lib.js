@@ -182,7 +182,7 @@ function formatMilestoneByEpicList(epics, epicMilestones) {
     return text;
 }
 
-const REPOS_IN_ORDER = ["internal-waku-outreach", "docs.waku.org", "research", "nwaku", "js-waku", "go-waku"]
+const REPOS_IN_ORDER = ["pm", "internal-waku-outreach", "docs.waku.org", "research", "nwaku", "js-waku", "go-waku"]
 
 function compareRepos(repoA, repoB) {
     return REPOS_IN_ORDER.indexOf(repoA.name) - REPOS_IN_ORDER.indexOf(repoB.name);
@@ -202,7 +202,8 @@ function getEpicLabel(milestone) {
 const REPO_TEAM_MAP = new Map([
     ["docs.waku.org", "Docs"],
     ["internal-waku-outreach", "Eco Dev"],
-    ["research", "Research"]
+    ["research", "Research"],
+    ["pm", "Epics"]
 ])
 
 function mapToTeamName(repo) {

@@ -53,10 +53,10 @@ async function weekly() {
 
         // Store the result in `updates`
         if (weeklyUpdate) {
-            if (!updates["Epics"]) {
-                updates["Epics"] = []
+            if (!updates[epicRepo]) {
+                updates[epicRepo] = []
             }
-            updates["Epics"].push({milestone: epic, update: weeklyUpdate})
+            updates[epicRepo].push({milestone: epic, update: weeklyUpdate})
         }
     }
 
