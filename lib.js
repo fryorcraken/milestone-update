@@ -100,9 +100,9 @@ function formatIssueTitleWithUrl(issue) {
 
 function getMonday( ) {
     let date = new Date();
-    const day = date.getDay() || 7;
+    const day = date.getUTCDay() || 7;
     if( day !== 1 )
-        date.setHours(-24 * (day - 1));
+        date.setUTCHours(-24 * (day - 1));
     return date;
 }
 
