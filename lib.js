@@ -124,7 +124,9 @@ function formatWeeklyReport(owner, repos, updates) {
 
         // Add milestones updates
         for (const {milestone, update} of updates[repo.name]) {
-            text += "**" + formatIssueTitleWithUrl(milestone) + "**" + " {" + getEpicLabel(milestone) + "}" + LB
+            const epic = getEpicLabel(milestone)
+            const epicLabel = epic ? " {" + epic + "}" : ""
+            text += "**" + formatIssueTitleWithUrl(milestone) + "**" + epicLabel + LB
             text += update + LB + LB
         }
     }
@@ -138,7 +140,9 @@ function formatMilestoneList(repoMilestones) {
         if (milestones.length > 0) {
             text += repoFullName + LB
             milestones.forEach((milestone) => {
-                text += "  " + formatIssueTitleWithUrl(milestone) + " {" + getEpicLabel(milestone) + "}" + LB
+                const epic = getEpicLabel(milestone)
+                const epicLabel = epic ? " {" + epic + "}" : ""
+                text += "  " + formatIssueTitleWithUrl(milestone) + epicLabel + LB
             })
         }
     })
@@ -158,7 +162,7 @@ function formatMilestoneByEpicList(epics, epicMilestones) {
     let text = ""
 
     epics.forEach((epic) => {
-        const label = getEpicLabel(epic);
+        const label = getEpicLabel(epic) ?? NO_EPIC_LABEL;
 
         text += "# " + formatIssueTitleWithUrl(epic) + " `" + label + "`" + LB
 
@@ -189,14 +193,11 @@ function compareRepos(repoA, repoB) {
 }
 
 function getEpicLabel(milestone) {
-    let epicLabel = NO_EPIC_LABEL
     for (const {name} of milestone.labels) {
         if (name.startsWith("E:")) {
-            epicLabel = name;
-            break
+            return name;
         }
     }
-    return epicLabel;
 }
 
 const REPO_TEAM_MAP = new Map([
