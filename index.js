@@ -65,7 +65,7 @@ async function weekly() {
 
     for (const repo of repos) {
         // Get all milestones from the repository.
-        const milestones = await getMilestones(octokit, org, repo)
+        const milestones = await getMilestones(octokit, org, repo, {state: "all"})
 
         // For each milestone, get the weekly update
         for (const milestone of milestones) {
