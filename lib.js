@@ -1,6 +1,6 @@
 // Foolproof regex
 const {Octokit} = require("octokit");
-const WEEKLY_UPDATE_RE = /\*\*weekly *update\*\*/i
+const WEEKLY_UPDATE_RE = /^\*?\*?weekly *update\*?\*?/i
 const LB = "\n"
 const NO_EPIC_LABEL = "NO EPIC LABEL"
 function getOctokit() {
@@ -26,7 +26,7 @@ async function getEpics(octokit, org, epicRepo) {
             'X-GitHub-Api-Version': '2022-11-28'
         }
     })
-    if (!res.data) throw new Error(`Failed to get issues for ${repo.full_name}: ${res}`)
+    if (!res.data) throw new Error(`Failed to get issues for ${epicRepo}: ${res}`)
     return res.data
 }
 
