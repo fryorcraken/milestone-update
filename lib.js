@@ -17,31 +17,19 @@ function getOctokit() {
     });
 }
 
-async function getEpics(octokit, org, epicRepo) {
-    const res = await octokit.request(`GET /repos/${org}/${epicRepo}/issues`, {
-        owner: org,
-        repo: epicRepo,
-        labels: "epic",
-        headers: {
-            'X-GitHub-Api-Version': '2022-11-28'
-        }
-    })
-    if (!res.data) throw new Error(`Failed to get issues for ${epicRepo}: ${res}`)
-    return res.data
-}
+getEpics = (octokit, org, repoName, options) => getIssues(octokit, org, repoName, {labels: "epic", ...options})
+getMilestones = (octokit, org, repoName, options) => getIssues(octokit, org, repoName, {labels: "milestone", ...options})
 
-
-async function getMilestones(octokit, org, repo, options) {
-    const res = await octokit.request(`GET /repos/${repo.full_name}/issues`, {
+async function getIssues(octokit, org, repoName, options) {
+    const res = await octokit.request(`GET /repos/${org}/${repoName}/issues`, {
         owner: org,
-        repo: repo.name,
-        labels: "milestone",
+        repo: repoName,
         headers: {
             'X-GitHub-Api-Version': '2022-11-28'
         },
         ...options
     })
-    if (!res.data) throw new Error(`Failed to get issues for ${repo.full_name}: ${res}`)
+    if (!res.data) throw new Error(`Failed to get issues for ${repoName}, ${JSON.stringify(options)}: ${res}`)
     return res.data
 }
 

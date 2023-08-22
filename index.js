@@ -37,7 +37,7 @@ async function weekly() {
     const lastWeek = lastWeekIso()
 
     // Collect Epic updates
-    const epics = await getEpics(octokit, org, epicRepo)
+    const epics = await getEpics(octokit, org, epicRepo, {state: "all", since: lastWeek})
 
     // For each epic, get the weekly update
     for (const epic of epics) {
@@ -65,7 +65,7 @@ async function weekly() {
 
     for (const repo of repos) {
         // Get all milestones from the repository.
-        const milestones = await getMilestones(octokit, org, repo, {state: "all"})
+        const milestones = await getMilestones(octokit, org, repo.name, {state: "all", since: lastWeek})
 
         // For each milestone, get the weekly update
         for (const milestone of milestones) {
@@ -105,7 +105,7 @@ async function list() {
 
     for (const repo of repos) {
         // Get all milestones from the repository.
-        const milestones = await getMilestones(octokit, ORG, repo)
+        const milestones = await getMilestones(octokit, ORG, repo.name)
 
         repoMilestones.set(repo.full_name, milestones)
     }
@@ -131,7 +131,7 @@ async function listByEpic() {
 
     for (const repo of repos) {
         // Get all milestones from the repository.
-        const milestones = await getMilestones(octokit, org, repo, {state: "all"})
+        const milestones = await getMilestones(octokit, org, repo.name, {state: "all"})
 
         for (let milestone of milestones) {
             const epicLabel = getEpicLabel(milestone)
