@@ -10,16 +10,16 @@ program.command("weekly")
     .action(async() => {
         await weekly()
     })
-program.command("list")
-    .description("list milestones")
+program.command("epics")
+    .description("list epics")
     .action(async () => {
-        await list()
+        await listEpics()
     })
 
-program.command("epics")
-    .description("list by epics")
+program.command("milestones")
+    .description("list by milestones")
     .action(async () => {
-        await listByEpic()
+        await listByMilestone()
     })
 
 program.parse()
@@ -28,7 +28,7 @@ async function weekly() {
     const octokit = getOctokit();
 
     const org = "waku-org"
-    const epicRepo = "pm"
+    const milestoneRepo = "pm"
 
     // Create `update` object, one entry per repo
     const updates = {}
@@ -36,12 +36,12 @@ async function weekly() {
     // Only care about comments made in the last week
     const lastWeek = lastWeekIso()
 
-    // Collect Epic updates
-    const epics = await getEpics(octokit, org, epicRepo, {state: "all", since: lastWeek})
+    // Collect Milestones updates
+    const milestones = await getMilestones(octokit, org, milestoneRepo, {state: "all", since: lastWeek})
 
     // For each epic, get the weekly update
-    for (const epic of epics) {
-        const comments = await getNewestCommentFirst(octokit, epic, epicRepo, lastWeek);
+    for (const milestone of milestones) {
+        const comments = await getNewestCommentFirst(octokit, milestone, milestoneRepo, lastWeek);
 
         let weeklyUpdate
         for (const comment of comments) {
@@ -53,23 +53,23 @@ async function weekly() {
 
         // Store the result in `updates`
         if (weeklyUpdate) {
-            if (!updates[epicRepo]) {
-                updates[epicRepo] = []
+            if (!updates[milestoneRepo]) {
+                updates[milestoneRepo] = []
             }
-            updates[epicRepo].push({milestone: epic, update: weeklyUpdate})
+            updates[milestoneRepo].push({epic: milestone, update: weeklyUpdate})
         }
     }
 
-    // Collect milestones updates
+    // Collect epic updates
     const repos = await getRepos(octokit, org);
 
     for (const repo of repos) {
-        // Get all milestones from the repository.
-        const milestones = await getMilestones(octokit, org, repo.name, {state: "all", since: lastWeek})
+        // Get all epics from the repository.
+        const epics = await getEpics(octokit, org, repo.name, {state: "all", since: lastWeek})
 
-        // For each milestone, get the weekly update
-        for (const milestone of milestones) {
-            const comments = await getNewestCommentFirst(octokit, milestone, repo.name, lastWeek);
+        // For each epic, get the weekly update
+        for (const epic of epics) {
+            const comments = await getNewestCommentFirst(octokit, epic, repo.name, lastWeek);
 
             let weeklyUpdate
             for (const comment of comments) {
@@ -84,7 +84,7 @@ async function weekly() {
                 if (!updates[repo.name]) {
                     updates[repo.name] = []
                 }
-                updates[repo.name].push({milestone, update: weeklyUpdate})
+                updates[repo.name].push({epic, update: weeklyUpdate})
             }
         }
     }
@@ -93,7 +93,7 @@ async function weekly() {
     console.log(text)
 }
 
-async function list() {
+async function listEpics() {
     const octokit = getOctokit();
 
     const ORG = "waku-org"
@@ -105,7 +105,7 @@ async function list() {
 
     for (const repo of repos) {
         // Get all milestones from the repository.
-        const milestones = await getMilestones(octokit, ORG, repo.name)
+        const milestones = await getEpics(octokit, ORG, repo.name)
 
         repoMilestones.set(repo.full_name, milestones)
     }
@@ -115,39 +115,39 @@ async function list() {
     console.log(text)
 }
 
-async function listByEpic() {
+async function listByMilestone() {
     const octokit = getOctokit();
 
     const org = "waku-org"
-    const epicRepo = "pm"
+    const milestoneRepo = "pm"
 
     // Get all repositories
     const repos = await getRepos(octokit, org);
 
-    // Get all epics
-    const epics = await getEpics(octokit, org, epicRepo)
+    // Get all milestones
+    const milestones = await getMilestones(octokit, org, milestoneRepo)
 
-    const epicMilestones = new Map()
+    const milestoneToEpics = new Map()
 
     for (const repo of repos) {
         // Get all milestones from the repository.
-        const milestones = await getMilestones(octokit, org, repo.name, {state: "all"})
+        const epics = await getEpics(octokit, org, repo.name, {state: "all"})
 
-        for (let milestone of milestones) {
-            const epicLabel = getEpicLabel(milestone)
+        for (let epic of epics) {
+            const epicLabel = getEpicLabel(epic)
 
-            milestone.repo_name = repo.name
+            epic.repo_name = repo.name
 
-            let _m = epicMilestones.get(epicLabel)
+            let _m = milestoneToEpics.get(epicLabel)
             if (!_m) {
                 _m = []
             }
-            _m.push(milestone)
-            epicMilestones.set(epicLabel, _m)
+            _m.push(epic)
+            milestoneToEpics.set(epicLabel, _m)
         }
     }
 
-    const text = formatMilestoneByEpicList(epics, epicMilestones);
+    const text = formatMilestoneByEpicList(milestones, milestoneToEpics);
 
     console.log(text)
 }

@@ -2,7 +2,7 @@
 const {Octokit} = require("octokit");
 const WEEKLY_UPDATE_RE = /^\*?\*?weekly *update\*?\*?/i
 const LB = "\n"
-const NO_EPIC_LABEL = "NO EPIC LABEL"
+const NO_MILESTONE_LABEL = "NO EPIC LABEL"
 function getOctokit() {
     const TOKEN = process.env.GH_TOKEN
 
@@ -111,10 +111,10 @@ function formatWeeklyReport(owner, repos, updates) {
         text += mapToTeamName(repo.name) + LB + LB
 
         // Add milestones updates
-        for (const {milestone, update} of updates[repo.name]) {
-            const epic = getEpicLabel(milestone)
-            const epicLabel = epic ? " {" + epic + "}" : ""
-            text += "**" + formatIssueTitleWithUrl(milestone) + "**" + epicLabel + LB
+        for (const {epic, update} of updates[repo.name]) {
+            const milestoneLabel = getMilestoneLabel(epic)
+            const fmtMilestoneLabel = milestoneLabel ? " {" + milestoneLabel + "}" : ""
+            text += "**" + formatIssueTitleWithUrl(epic) + "**" + fmtMilestoneLabel + LB
             text += update + LB + LB
         }
     }
@@ -128,7 +128,7 @@ function formatMilestoneList(repoMilestones) {
         if (milestones.length > 0) {
             text += repoFullName + LB
             milestones.forEach((milestone) => {
-                const epic = getEpicLabel(milestone)
+                const epic = getMilestoneLabel(milestone)
                 const epicLabel = epic ? " {" + epic + "}" : ""
                 text += "  " + formatIssueTitleWithUrl(milestone) + epicLabel + LB
             })
@@ -146,27 +146,27 @@ function formatCheckBox(issue) {
     }
 }
 
-function formatMilestoneByEpicList(epics, epicMilestones) {
+function formatMilestoneByEpicList(milestones, milestoneEpics) {
     let text = ""
 
-    epics.forEach((epic) => {
-        const label = getEpicLabel(epic) ?? NO_EPIC_LABEL;
+    milestones.forEach((milestone) => {
+        const label = getMilestoneLabel(milestone) ?? NO_MILESTONE_LABEL;
 
-        text += "# " + formatIssueTitleWithUrl(epic) + " `" + label + "`" + LB
+        text += "# " + formatIssueTitleWithUrl(milestone) + " `" + label + "`" + LB
 
-        const milestones = epicMilestones.get(label) ?? []
-        for (const milestone of milestones) {
-            text += "  " + formatCheckBox(milestone) + milestone.repo_name + ": " + formatIssueTitleWithUrl(milestone) + LB
+        const epics = milestoneEpics.get(label) ?? []
+        for (const epic of epics) {
+            text += "  " + formatCheckBox(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
         }
         text += LB
     })
 
 
-    const milestones = epicMilestones.get(NO_EPIC_LABEL).filter(m => m.state === "open")
-    if (milestones) {
+    const epics = milestoneEpics.get(NO_MILESTONE_LABEL)?.filter(m => m.state === "open")
+    if (epics) {
         text += "# Orphan Milestones" + LB
-        for (const milestone of milestones) {
-            text += formatCheckBox(milestone) + milestone.repo_name + ": " + formatIssueTitleWithUrl(milestone) + LB
+        for (const epic of epics) {
+            text += formatCheckBox(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
         }
         text += LB
     }
@@ -180,7 +180,7 @@ function compareRepos(repoA, repoB) {
     return REPOS_IN_ORDER.indexOf(repoA.name) - REPOS_IN_ORDER.indexOf(repoB.name);
 }
 
-function getEpicLabel(milestone) {
+function getMilestoneLabel(milestone) {
     for (const {name} of milestone.labels) {
         if (name.startsWith("E:")) {
             return name;
@@ -209,7 +209,7 @@ module.exports = {
     cleanUpdate,
     formatWeeklyReport,
     getEpics,
-    getEpicLabel,
+    getEpicLabel: getMilestoneLabel,
     getOctokit,
     formatMilestoneList,
     formatMilestoneByEpicList
