@@ -17,7 +17,7 @@ program.command("epics")
     })
 
 program.command("milestones")
-    .description("list by milestones")
+    .description("list all epics by milestones")
     .action(async () => {
         await listByMilestone()
     })
@@ -138,10 +138,7 @@ async function listByMilestone() {
 
             epic.repo_name = repo.name
 
-            let _m = milestoneToEpics.get(epicLabel)
-            if (!_m) {
-                _m = []
-            }
+            let _m = milestoneToEpics.get(epicLabel) ?? []
             _m.push(epic)
             milestoneToEpics.set(epicLabel, _m)
         }
