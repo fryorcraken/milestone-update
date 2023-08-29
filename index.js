@@ -196,13 +196,13 @@ async function listByMilestone() {
         const epics = await getEpics(octokit, org, repo.name, {state: "all"})
 
         for (let epic of epics) {
-            const epicLabel = getEpicLabel(epic)
+            const milestoneLabel = getMilestoneLabel(epic)
 
             epic.repo_name = repo.name
 
-            let _m = milestoneToEpics.get(epicLabel) ?? []
+            let _m = milestoneToEpics.get(milestoneLabel) ?? []
             _m.push(epic)
-            milestoneToEpics.set(epicLabel, _m)
+            milestoneToEpics.set(milestoneLabel, _m)
         }
     }
 
