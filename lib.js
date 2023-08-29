@@ -1,6 +1,7 @@
 // Foolproof regex
 const {Octokit} = require("octokit");
 const WEEKLY_UPDATE_RE = /^\*?\*?weekly *update\*?\*?/i
+const MONTHLY_UPDATE_RE = /^\*?\*?monthly *update\*?\*?/i
 const LB = "\n"
 const NO_MILESTONE_LABEL = "NO EPIC LABEL"
 function getOctokit() {
@@ -68,7 +69,7 @@ async function getIssuesForMonth(octokit, org, repoName, monthIndex, options) {
 }
 
 function wasUpdatedInMonth(monthIndex, issue) {
-    const firstDay = new Date(2023, monthIndex, 1, 0, 0, 0, 0);
+    const firstDay = firstDayOfMonth(monthIndex);
     let lastDay = new Date(2023, monthIndex + 1, 1, 0, 0, 0, 0);
     lastDay = new Date(lastDay.valueOf() - 1)
 
@@ -95,8 +96,14 @@ function isWeeklyUpdateComment(comment) {
     return comment.body.search(WEEKLY_UPDATE_RE) !== -1
 }
 
+function isMonthlyUpdateComment(comment) {
+    return comment.body.search(MONTHLY_UPDATE_RE) !== -1
+}
+
 function cleanUpdate(update) {
-    return update.replace(WEEKLY_UPDATE_RE, "").replace(/^\s*[\r\n]$/gm, "")
+    return update.replace(WEEKLY_UPDATE_RE, "")
+        .replace(MONTHLY_UPDATE_RE, "")
+        .replace(/^\s*[\r\n]$/gm, "")
 }
 
 function formatProjectName(org) {
@@ -111,6 +118,10 @@ function lastFiveDaysIso() {
     lastWeek.setDate(lastWeekInt);
 
     return lastWeek.toISOString()
+}
+
+function firstDayOfMonth(monthIndex) {
+    return new Date(2023, monthIndex, 1, 0, 0, 0, 0)
 }
 
 async function getNewestCommentFirst(octokit, milestone, repoName, since) {
@@ -205,6 +216,8 @@ function formatMonthlyReport(milestones, milestoneEpics) {
 
         text += `**Epics: ${closed.length} closed, ${open.length} open**` + LB + LB
 
+        text += milestone.monthlyUpdate + LB + LB
+
         text += `## ${updated.length} Epic${updated.length ? "s" : ""} Updated` + LB
         for (const epic of updated) {
             text += "  " + formatCheckBox(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
@@ -284,6 +297,7 @@ module.exports = {
     getOctokit,
     formatMilestoneList,
     formatMilestoneByEpicList,
-    getIssuesForMonth,
+    firstDayOfMonth,
+    isMonthlyUpdateComment,
     wasUpdatedInMonth
 }

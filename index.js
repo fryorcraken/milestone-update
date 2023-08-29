@@ -12,7 +12,7 @@ const {
     getEpics,
     formatMilestoneByEpicList,
     wasUpdatedInMonth,
-    formatMonthlyReport
+    formatMonthlyReport, firstDayOfMonth, isMonthlyUpdateComment
 } = require("./lib");
 const {program} = require('commander');
 
@@ -121,6 +121,22 @@ async function month(m) {
 
     // Get all milestones
     const milestones = await getMilestones(octokit, org, milestoneRepo)
+
+    const since = firstDayOfMonth(monthIndex)
+
+    // For each milestone, get the monthly update
+    for (const milestone of milestones) {
+        // TODO: this really only work when getting most recent month
+        const comments = await getNewestCommentFirst(octokit, milestone, milestoneRepo, since);
+
+        for (const comment of comments) {
+
+            if (isMonthlyUpdateComment(comment)) {
+                milestone.monthlyUpdate = cleanUpdate(comment.body)
+                break
+            }
+        }
+    }
 
     const milestoneToEpics = new Map()
 
