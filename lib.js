@@ -33,6 +33,52 @@ async function getIssues(octokit, org, repoName, options) {
     return res.data
 }
 
+async function getIssuesForMonth(octokit, org, repoName, monthIndex, options) {
+    // TODO: not future proof
+    const since = new Date(2023, monthIndex, 1, 0, 0, 0, 0).toISOString();
+    let lastDay = new Date(2023, monthIndex + 1, 1, 0, 0, 0, 0);
+    lastDay = new Date(lastDay.valueOf() - 1)
+
+    let page = 1
+    const issues = []
+    let cont = true
+    while (cont) {
+        let _issues = await getIssues(octokit, org, repoName, {
+            page,
+            since,
+            sort: "updated",
+            direction: "asc", ...options
+        })
+
+        if (!_issues.length) break;
+
+        for (const issue of _issues) {
+            const updatedAt = new Date(issue.updated_at)
+
+            if (updatedAt.getTime() < lastDay.getTime()) {
+                issues.push(issue)
+            } else {
+                cont = false
+            }
+        }
+        page += 1
+    }
+
+    return issues
+}
+
+function wasUpdatedInMonth(monthIndex, issue) {
+    const firstDay = new Date(2023, monthIndex, 1, 0, 0, 0, 0);
+    let lastDay = new Date(2023, monthIndex + 1, 1, 0, 0, 0, 0);
+    lastDay = new Date(lastDay.valueOf() - 1)
+
+    // TODO: maybe best to rely on weekly updates (issues comments)
+    const updatedAt = (new Date(issue.updated_at)).getTime()
+
+    return updatedAt > firstDay.getTime() &&
+        updatedAt < lastDay.getTime()
+}
+
 async function getRepos(octokit, owner) {
     const res = await octokit.request(`GET /orgs/${owner}/repos`, {
         org: 'owner',
@@ -146,6 +192,30 @@ function formatCheckBox(issue) {
     }
 }
 
+function formatMonthlyReport(milestones, milestoneEpics) {
+    let text = ""
+
+    milestones.forEach((milestone) => {
+        const label = getMilestoneLabel(milestone);
+        if (!label) throw new Error(`No label for ${milestone.html_url}`)
+
+        text += "# " + formatIssueTitleWithUrl(milestone) + " `" + label + "`" + LB + LB
+
+        const {closed, open, updated} = milestoneEpics.get(label) ?? {closed: [], open: [], updated: []}
+
+        text += `**Epics: ${closed.length} closed, ${open.length} open**` + LB + LB
+
+        text += `## ${updated.length} Epic${updated.length ? "s" : ""} Updated` + LB
+        for (const epic of updated) {
+            text += "  " + formatCheckBox(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
+        }
+        text += LB
+
+    })
+
+    return text;
+}
+
 function formatMilestoneByEpicList(milestones, milestoneEpics) {
     let text = ""
 
@@ -203,14 +273,17 @@ function mapToTeamName(repo) {
 module.exports = {
     getRepos,
     getMilestones,
-    lastWeekIso: lastFiveDaysIso,
+    lastFiveDaysIso,
     getNewestCommentFirst,
     isWeeklyUpdateComment,
     cleanUpdate,
     formatWeeklyReport,
+    formatMonthlyReport,
     getEpics,
-    getEpicLabel: getMilestoneLabel,
+    getMilestoneLabel,
     getOctokit,
     formatMilestoneList,
-    formatMilestoneByEpicList
+    formatMilestoneByEpicList,
+    getIssuesForMonth,
+    wasUpdatedInMonth
 }
