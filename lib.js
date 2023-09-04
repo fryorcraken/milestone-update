@@ -1,6 +1,6 @@
 // Foolproof regex
 const {Octokit} = require("octokit");
-const WEEKLY_UPDATE_RE = /^\*?\*?weekly *update\*?\*?/i
+const WEEKLY_UPDATE_RE = /^\*?\*?weekly *update\*?\*?:?/i
 const MONTHLY_UPDATE_RE = /^\*?\*?monthly *update\*?\*?/i
 const LB = "\n"
 const NO_MILESTONE_LABEL = "NO EPIC LABEL"
