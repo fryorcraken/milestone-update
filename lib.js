@@ -31,7 +31,7 @@ async function getIssues(octokit, org, repoName, options) {
         ...options
     })
     if (!res.data) throw new Error(`Failed to get issues for ${repoName}, ${JSON.stringify(options)}: ${res}`)
-    return res.data
+    return res.data.filter(i => !i.pull_request)
 }
 
 async function getIssuesForMonth(octokit, org, repoName, monthIndex, options) {
@@ -86,10 +86,10 @@ async function getRepos(octokit, owner) {
         headers: {
             'X-GitHub-Api-Version': '2022-11-28'
         },
-        per_page: 50
+        type: "public"
     })
     if (!res.data) throw new Error(`Failed to get repos for ${owner}: ${res}`)
-    return res.data
+    return res.data.filter (r => !r.archived)
 }
 
 function isWeeklyUpdateComment(comment) {
@@ -151,33 +151,6 @@ function getMonday( ) {
     return date;
 }
 
-function formatWeeklyReport(owner, repos, updates) {
-    let text = ""
-    let projectName = formatProjectName(owner);
-
-    text += getMonday().toISOString().substring(0, 10) + " " + projectName + " weekly" + LB
-
-    repos.sort(compareRepos)
-
-    // Format updates
-    for (const repo of repos) {
-        if (!updates[repo.name] || !updates[repo.name].length) {
-            continue
-        }
-        text += "---" + LB
-        text += mapToTeamName(repo.name) + LB + LB
-
-        // Add milestones updates
-        for (const {epic, update} of updates[repo.name]) {
-            const milestoneLabel = getMilestoneLabel(epic)
-            const fmtMilestoneLabel = milestoneLabel ? " {" + milestoneLabel + "}" : ""
-            text += "**" + formatIssueTitleWithUrl(epic) + "**" + fmtMilestoneLabel + LB
-            text += update + LB + LB
-        }
-    }
-    return text + "---" + LB
-}
-
 function formatMilestoneList(repoMilestones) {
     let text = ""
 
@@ -185,7 +158,7 @@ function formatMilestoneList(repoMilestones) {
         if (milestones.length > 0) {
             text += repoFullName + LB
             milestones.forEach((milestone) => {
-                const epic = getMilestoneLabel(milestone)
+                const epic = getEpicLabel(milestone)
                 const epicLabel = epic ? " {" + epic + "}" : ""
                 text += "  " + formatIssueTitleWithUrl(milestone) + epicLabel + LB
             })
@@ -207,7 +180,7 @@ function formatMonthlyReport(milestones, milestoneEpics) {
     let text = ""
 
     milestones.forEach((milestone) => {
-        const label = getMilestoneLabel(milestone);
+        const label = getEpicLabel(milestone);
         if (!label) throw new Error(`No label for ${milestone.html_url}`)
 
         text += "# " + formatIssueTitleWithUrl(milestone) + " `" + label + "`" + LB + LB
@@ -233,7 +206,7 @@ function formatMilestoneByEpicList(milestones, milestoneEpics) {
     let text = ""
 
     milestones.forEach((milestone) => {
-        const label = getMilestoneLabel(milestone) ?? NO_MILESTONE_LABEL;
+        const label = getEpicLabel(milestone) ?? NO_MILESTONE_LABEL;
 
         text += "# " + formatIssueTitleWithUrl(milestone) + " `" + label + "`" + LB
 
@@ -263,12 +236,8 @@ function compareRepos(repoA, repoB) {
     return REPOS_IN_ORDER.indexOf(repoA.name) - REPOS_IN_ORDER.indexOf(repoB.name);
 }
 
-function getMilestoneLabel(milestone) {
-    for (const {name} of milestone.labels) {
-        if (name.startsWith("E:")) {
-            return name;
-        }
-    }
+function epicLabels(issue) {
+    return issue.labels.filter(({name}) => name.startsWith("E:"))
 }
 
 const REPO_TEAM_MAP = new Map([
@@ -290,12 +259,18 @@ module.exports = {
     getNewestCommentFirst,
     isWeeklyUpdateComment,
     cleanUpdate,
-    formatWeeklyReport,
+    formatProjectName,
+    getMonday,
+    LB,
+    mapToTeamName,
+    compareRepos,
     formatMonthlyReport,
     getEpics,
-    getMilestoneLabel,
+    getIssues,
+    epicLabels,
     getOctokit,
     formatMilestoneList,
+    formatIssueTitleWithUrl,
     formatMilestoneByEpicList,
     firstDayOfMonth,
     isMonthlyUpdateComment,

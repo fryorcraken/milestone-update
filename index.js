@@ -5,14 +5,14 @@ const {
     getNewestCommentFirst,
     isWeeklyUpdateComment,
     cleanUpdate,
-    formatWeeklyReport,
     getOctokit,
     formatMilestoneList,
     getMilestoneLabel,
     getEpics,
     formatMilestoneByEpicList,
     wasUpdatedInMonth,
-    formatMonthlyReport, firstDayOfMonth, isMonthlyUpdateComment
+    formatMonthlyReport, firstDayOfMonth, isMonthlyUpdateComment, getIssues, formatProjectName, getMonday, LB,
+    compareRepos, mapToTeamName, formatIssueTitleWithUrl
 } = require("./lib");
 const {program} = require('commander');
 
@@ -46,69 +46,71 @@ async function weekly() {
     const octokit = getOctokit();
 
     const org = "waku-org"
-    const milestoneRepo = "pm"
-
-    // Create `update` object, one entry per repo
-    const updates = {}
 
     // Only care about comments made in the last week
     const lastWeek = lastFiveDaysIso()
 
-    // Collect Milestones updates
-    const milestones = await getMilestones(octokit, org, milestoneRepo, {state: "all", since: lastWeek})
+    // Get all repos
+    const repos = await getRepos(octokit, org);
 
-    // For each epic, get the weekly update
-    for (const milestone of milestones) {
-        const comments = await getNewestCommentFirst(octokit, milestone, milestoneRepo, lastWeek);
+    // Get all issues updates in the last week
+    const issues = []
+    for (const repo of repos) {
+        const _issues = await getIssues(octokit, org, repo.name, {state: "all", since: lastWeek, per_page: 50})
+        issues.push(..._issues.map(i => {
+            return {repoName: repo.name, ...i}
+        }))
+    }
 
-        let weeklyUpdate
+    // Map<repoName, {issue, text}[]>
+    const weeklyUpdates = new Map()
+    // Get all weekly update comments
+    for (const issue of issues) {
+        const comments = await getNewestCommentFirst(octokit, issue, issue.repoName, lastWeek);
+
+        let text
         for (const comment of comments) {
             if (isWeeklyUpdateComment(comment)) {
-                weeklyUpdate = cleanUpdate(comment.body)
+                text = cleanUpdate(comment.body)
                 break
             }
         }
 
-        // Store the result in `updates`
-        if (weeklyUpdate) {
-            if (!updates[milestoneRepo]) {
-                updates[milestoneRepo] = []
-            }
-            updates[milestoneRepo].push({epic: milestone, update: weeklyUpdate})
+        if (text) {
+            const _updates = weeklyUpdates.get(issue.repoName) ?? []
+            _updates.push({text, issue})
+            weeklyUpdates.set(issue.repoName, _updates)
         }
     }
 
-    // Collect epic updates
-    const repos = await getRepos(octokit, org);
+    // Build the report
+    let report = ""
+    let projectName = formatProjectName(org);
 
+    report += getMonday().toISOString().substring(0, 10) + " " + projectName + " weekly" + LB
+
+    repos.sort(compareRepos)
+
+    // Sort updates per repo
     for (const repo of repos) {
-        // Get all epics from the repository.
-        const epics = await getEpics(octokit, org, repo.name, {state: "all", since: lastWeek})
+        const updates = weeklyUpdates.get(repo.name)
+        if (!updates || !updates.length) {
+            continue
+        }
+        report += "---" + LB
+        report += mapToTeamName(repo.name) + LB + LB
 
-        // For each epic, get the weekly update
-        for (const epic of epics) {
-            const comments = await getNewestCommentFirst(octokit, epic, repo.name, lastWeek);
-
-            let weeklyUpdate
-            for (const comment of comments) {
-                if (isWeeklyUpdateComment(comment)) {
-                    weeklyUpdate = cleanUpdate(comment.body)
-                    break
-                }
-            }
-
-            // Store the result in `updates`
-            if (weeklyUpdate) {
-                if (!updates[repo.name]) {
-                    updates[repo.name] = []
-                }
-                updates[repo.name].push({epic, update: weeklyUpdate})
-            }
+        // Add milestones updates
+        for (const {issue, text} of updates) {
+            const labels = issue.labels.map(l => l.name).filter(n => n !== "epic")
+            const fmtLabels = labels ? labels.map(l => " {" + l + "}") : ""
+            report += "**" + formatIssueTitleWithUrl(issue) + "**" + fmtLabels + LB
+            report += text + LB + LB
         }
     }
-    const text = formatWeeklyReport(org, repos, updates);
+    report += "---" + LB
 
-    console.log(text)
+    console.log(report)
 }
 
 async function month(m) {
