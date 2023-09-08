@@ -168,8 +168,12 @@ function formatMilestoneList(repoMilestones) {
     return text;
 }
 
-function formatCheckBox(issue) {
-    if (issue.state === 'open') {
+function formatCheckBoxIssue(issue) {
+    return formatCheckBox(issue.state === 'open')
+}
+
+function formatCheckBox(pred) {
+    if (pred) {
         return "- [ ] "
     } else {
         return "- [x] "
@@ -193,7 +197,7 @@ function formatMonthlyReport(milestones, milestoneEpics) {
 
         text += `## ${updated.length} Epic${updated.length ? "s" : ""} Updated` + LB
         for (const epic of updated) {
-            text += "  " + formatCheckBox(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
+            text += "  " + formatCheckBoxIssue(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
         }
         text += LB
 
@@ -212,7 +216,7 @@ function formatMilestoneByEpicList(milestones, milestoneEpics) {
 
         const epics = milestoneEpics.get(label) ?? []
         for (const epic of epics) {
-            text += "  " + formatCheckBox(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
+            text += "  " + formatCheckBoxIssue(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
         }
         text += LB
     })
@@ -222,7 +226,7 @@ function formatMilestoneByEpicList(milestones, milestoneEpics) {
     if (epics) {
         text += "# Orphan Milestones" + LB
         for (const epic of epics) {
-            text += formatCheckBox(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
+            text += formatCheckBoxIssue(epic) + epic.repo_name + ": " + formatIssueTitleWithUrl(epic) + LB
         }
         text += LB
     }
@@ -252,6 +256,41 @@ function mapToTeamName(repo) {
     return teamName ?? repo
 }
 
+const CONTRIBUTORS = [
+    "LordGhostX",
+    "danisharora099",
+    "jm-clius",
+    "Ivansete-status",
+    "harsh-98",
+    "weboko",
+    "richard-ramos",
+    "gabrielmer",
+    "NagyZoltanPeter",
+    "vpavlin",
+    "chaitanyaprem",
+    "fryorcraken",
+    "hackyguru",
+    "SionoiS",
+    "s-tikhomirov",
+    "alrevuelta"
+]
+
+class ContributorUpdates {
+    updates;
+
+    constructor() {
+        this.updates = new Map()
+        for (const c of CONTRIBUTORS.sort()) {
+            this.updates.set(c, false)
+        }
+    }
+
+    update(c) {
+        this.updates.set(c, true)
+    }
+
+}
+
 module.exports = {
     getRepos,
     getMilestones,
@@ -268,6 +307,8 @@ module.exports = {
     getEpics,
     getIssues,
     epicLabels,
+    ContributorUpdates,
+    formatCheckBox,
     getOctokit,
     formatMilestoneList,
     formatIssueTitleWithUrl,

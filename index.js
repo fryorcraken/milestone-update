@@ -12,7 +12,7 @@ const {
     formatMilestoneByEpicList,
     wasUpdatedInMonth,
     formatMonthlyReport, firstDayOfMonth, isMonthlyUpdateComment, getIssues, formatProjectName, getMonday, LB,
-    compareRepos, mapToTeamName, formatIssueTitleWithUrl
+    compareRepos, mapToTeamName, formatIssueTitleWithUrl, ContributorUpdates, formatCheckBox
 } = require("./lib");
 const {program} = require('commander');
 
@@ -62,6 +62,9 @@ async function weekly() {
         }))
     }
 
+    // Track contributor updates
+    const contributorUpdates = new ContributorUpdates();
+
     // Map<repoName, {issue, text}[]>
     const weeklyUpdates = new Map()
     // Get all weekly update comments
@@ -72,6 +75,7 @@ async function weekly() {
         for (const comment of comments) {
             if (isWeeklyUpdateComment(comment)) {
                 text = cleanUpdate(comment.body)
+                contributorUpdates.update(comment.user?.login)
                 break
             }
         }
@@ -82,6 +86,14 @@ async function weekly() {
             weeklyUpdates.set(issue.repoName, _updates)
         }
     }
+
+    // Check who has done an update
+    let contributorsCheck = ""
+    for (const [contributor, hasUpdated] of contributorUpdates.updates) {
+        contributorsCheck += formatCheckBox(hasUpdated) + contributor + LB
+    }
+    contributorsCheck += LB
+    console.log(contributorsCheck)
 
     // Build the report
     let report = ""
