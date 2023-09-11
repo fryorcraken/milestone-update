@@ -174,9 +174,9 @@ function formatCheckBoxIssue(issue) {
 
 function formatCheckBox(pred) {
     if (pred) {
-        return "- [ ] "
-    } else {
         return "- [x] "
+    } else {
+        return "- [ ] "
     }
 }
 
@@ -281,12 +281,21 @@ class ContributorUpdates {
     constructor() {
         this.updates = new Map()
         for (const c of CONTRIBUTORS.sort()) {
-            this.updates.set(c, false)
+            this.updates.set(c, [])
         }
     }
 
-    update(c) {
-        this.updates.set(c, true)
+    update(comment) {
+        const contributor = comment?.user?.login
+        if (contributor) {
+            const comments = this.updates.get(contributor) ?? []
+            const url = comment.html_url
+            if (!url) {
+                console.log(comment)
+            }
+            comments.push(url)
+            this.updates.set(contributor, comments)
+        }
     }
 
 }

@@ -75,7 +75,7 @@ async function weekly() {
         for (const comment of comments) {
             if (isWeeklyUpdateComment(comment)) {
                 text = cleanUpdate(comment.body)
-                contributorUpdates.update(comment.user?.login)
+                contributorUpdates.update(comment)
                 break
             }
         }
@@ -89,8 +89,9 @@ async function weekly() {
 
     // Check who has done an update
     let contributorsCheck = ""
-    for (const [contributor, hasUpdated] of contributorUpdates.updates) {
-        contributorsCheck += formatCheckBox(hasUpdated) + contributor + LB
+    for (const [contributor, comments] of contributorUpdates.updates) {
+        let i = 1
+        contributorsCheck += formatCheckBox(comments.length) + contributor + comments.map (c => ` [${i++}](${c})`) + LB
     }
     contributorsCheck += LB
     console.log(contributorsCheck)
