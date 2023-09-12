@@ -56,7 +56,7 @@ async function weekly() {
     // Get all issues updates in the last week
     const issues = []
     for (const repo of repos) {
-        const _issues = await getIssues(octokit, org, repo.name, {state: "all", since: lastWeek, per_page: 50})
+        const _issues = await getIssues(octokit, org, repo.name, {state: "all", since: lastWeek, per_page: 100})
         issues.push(..._issues.map(i => {
             return {repoName: repo.name, ...i}
         }))
@@ -71,18 +71,19 @@ async function weekly() {
     for (const issue of issues) {
         const comments = await getNewestCommentFirst(octokit, issue, issue.repoName, lastWeek);
 
-        let text
+        let _weeklyUpdatesText = []
         for (const comment of comments) {
             if (isWeeklyUpdateComment(comment)) {
-                text = cleanUpdate(comment.body)
+                _weeklyUpdatesText.push(cleanUpdate(comment.body))
                 contributorUpdates.update(comment)
-                break
             }
         }
 
-        if (text) {
+        if (_weeklyUpdatesText.length !== 0) {
             const _updates = weeklyUpdates.get(issue.repoName) ?? []
-            _updates.push({text, issue})
+            for (const text of _weeklyUpdatesText) {
+                _updates.push({text, issue})
+            }
             weeklyUpdates.set(issue.repoName, _updates)
         }
     }
@@ -90,8 +91,7 @@ async function weekly() {
     // Check who has done an update
     let contributorsCheck = ""
     for (const [contributor, comments] of contributorUpdates.updates) {
-        let i = 1
-        contributorsCheck += formatCheckBox(comments.length) + contributor + comments.map (c => ` [${i++}](${c})`) + LB
+        contributorsCheck += formatCheckBox(comments.length) + contributor + LB
     }
     contributorsCheck += LB
     console.log(contributorsCheck)
@@ -111,11 +111,11 @@ async function weekly() {
             continue
         }
         report += "---" + LB
-        report += mapToTeamName(repo.name) + LB + LB
+        report += "### " + mapToTeamName(repo.name) + LB + LB
 
         // Add milestones updates
         for (const {issue, text} of updates) {
-            const labels = issue.labels.map(l => l.name).filter(n => n !== "epic")
+            const labels = issue.labels.map(l => l.name).filter(n => !LABELS_TO_FILTER_OUT.includes(n))
             const fmtLabels = labels ? labels.map(l => " {" + l + "}") : ""
             report += "**" + formatIssueTitleWithUrl(issue) + "**" + fmtLabels + LB
             report += text + LB + LB
@@ -125,6 +125,8 @@ async function weekly() {
 
     console.log(report)
 }
+
+const LABELS_TO_FILTER_OUT = ["epic", "good first issue", "help wanted"]
 
 async function month(m) {
     const octokit = getOctokit();
