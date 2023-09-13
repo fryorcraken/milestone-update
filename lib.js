@@ -151,20 +151,19 @@ function getMonday( ) {
     return date;
 }
 
-function formatMilestoneList(repoMilestones) {
+function formatEpicList(epicsPerLabel, issuesPerLabel) {
     let text = ""
 
-    repoMilestones.forEach((milestones, repoFullName) => {
-        if (milestones.length > 0) {
-            text += repoFullName + LB
-            milestones.forEach((milestone) => {
-                const epic = getEpicLabel(milestone)
-                const epicLabel = epic ? " {" + epic + "}" : ""
-                text += "  " + formatIssueTitleWithUrl(milestone) + epicLabel + LB
-            })
-        }
-    })
+    for (const [label, epic] of epicsPerLabel) {
+        text += "# " + formatIssueTitleWithUrl(epic) + " {" + label + "}" + LB + LB
 
+        const issues = issuesPerLabel.get(label)
+        for (const issue of issues) {
+            text += formatCheckBoxIssue(issue) + formatIssueTitleWithUrl(issue) + LB
+        }
+
+        text += LB
+    }
     return text;
 }
 
@@ -319,7 +318,7 @@ module.exports = {
     ContributorUpdates,
     formatCheckBox,
     getOctokit,
-    formatMilestoneList,
+    formatEpicList,
     formatIssueTitleWithUrl,
     formatMilestoneByEpicList,
     firstDayOfMonth,

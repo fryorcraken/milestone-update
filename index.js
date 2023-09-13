@@ -12,7 +12,7 @@ const {
     formatMilestoneByEpicList,
     wasUpdatedInMonth,
     formatMonthlyReport, firstDayOfMonth, isMonthlyUpdateComment, getIssues, formatProjectName, getMonday, LB,
-    compareRepos, mapToTeamName, formatIssueTitleWithUrl, ContributorUpdates, formatCheckBox
+    compareRepos, mapToTeamName, formatIssueTitleWithUrl, ContributorUpdates, formatCheckBox, epicLabels, formatEpicList
 } = require("./lib");
 const {program} = require('commander');
 
@@ -191,21 +191,42 @@ async function month(m) {
 async function listEpics() {
     const octokit = getOctokit();
 
-    const ORG = "waku-org"
+    const org = "waku-org"
+    const pmRepo = "pm"
 
-    // Get all repositories
-    const repos = await getRepos(octokit, ORG);
+    // Only get open epics
+    const epics = await getEpics(octokit, org, pmRepo)
 
-    const repoMilestones = new Map()
+    const issuesPerLabel = new Map();
+    const epicsPerLabel = new Map();
 
-    for (const repo of repos) {
-        // Get all milestones from the repository.
-        const milestones = await getEpics(octokit, ORG, repo.name)
+    for (const epic of epics) {
+        const labels = epicLabels(epic)
+        // should be one label per epic
 
-        repoMilestones.set(repo.full_name, milestones)
+        if (labels.length > 1) throw new Error(`Too many labels on ${epic.html_url}`)
+        if (labels.length) {
+            issuesPerLabel.set(labels[0].name, [])
+            epicsPerLabel.set(labels[0].name, epic)
+        }
     }
 
-    const text = formatMilestoneList(repoMilestones);
+    const allEpicLabels = issuesPerLabel.keys();
+
+    // Get all repositories
+    const repos = await getRepos(octokit, org);
+
+    for (const repo of repos) {
+        // Seems like the best way is to spam the API to get all issues with label of open epics
+        for (const label of allEpicLabels) {
+            const issues = await getIssues(octokit, org, repo.name, {labels: label, state: "all"})
+            const _issues = issuesPerLabel.get(label)
+            _issues.push(...issues)
+            issuesPerLabel.set(label, _issues)
+        }
+    }
+
+    const text = formatEpicList(epicsPerLabel, issuesPerLabel);
 
     console.log(text)
 }
