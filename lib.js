@@ -159,7 +159,7 @@ function formatEpicList(epicsPerLabel, issuesPerLabel) {
 
         const issues = issuesPerLabel.get(label)
         for (const issue of issues) {
-            text += formatCheckBoxIssue(issue) + formatIssueTitleWithUrl(issue) + LB
+            text += formatCheckBoxIssue(issue) + issue.repoName + ": " + issue.html_url + LB
         }
 
         text += LB
@@ -168,7 +168,7 @@ function formatEpicList(epicsPerLabel, issuesPerLabel) {
 }
 
 function formatCheckBoxIssue(issue) {
-    return formatCheckBox(issue.state === 'open')
+    return formatCheckBox(issue.state === 'closed')
 }
 
 function formatCheckBox(pred) {

@@ -221,7 +221,9 @@ async function listEpics() {
         for (const label of allEpicLabels) {
             const issues = await getIssues(octokit, org, repo.name, {labels: label, state: "all"})
             const _issues = issuesPerLabel.get(label)
-            _issues.push(...issues)
+            _issues.push(...issues.map(i => {
+                return {repoName: repo.name, ...i}
+            }))
             issuesPerLabel.set(label, _issues)
         }
     }
