@@ -211,12 +211,15 @@ async function listEpics() {
         }
     }
 
-    const allEpicLabels = issuesPerLabel.keys();
+    const allEpicLabels = Array.from(issuesPerLabel.keys());
+    console.log(allEpicLabels.length + " labels")
 
     // Get all repositories
     const repos = await getRepos(octokit, org);
+    console.log(repos.length + " repos")
 
     for (const repo of repos) {
+        if (repo.name === pmRepo) continue
         // Seems like the best way is to spam the API to get all issues with label of open epics
         for (const label of allEpicLabels) {
             const issues = await getIssues(octokit, org, repo.name, {labels: label, state: "all"})
@@ -227,7 +230,6 @@ async function listEpics() {
             issuesPerLabel.set(label, _issues)
         }
     }
-
     const text = formatEpicList(epicsPerLabel, issuesPerLabel);
 
     console.log(text)
