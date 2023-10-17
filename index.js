@@ -115,7 +115,15 @@ async function weekly() {
 
         // Add milestones updates
         for (const {issue, text} of updates) {
-            const labels = issue.labels.map(l => l.name).filter(n => !LABELS_TO_FILTER_OUT.includes(n))
+            const labels = issue.labels.map(l => l.name).filter(n => {
+                return LABELS_TO_FILTER_OUT.find((test) => {
+                    if (typeof test === 'string') {
+                        return test === n
+                    } else {
+                        return test.test(n)
+                    }
+                }) === undefined
+            })
             const fmtLabels = labels ? labels.map(l => " {" + l + "}") : ""
             report += "**" + formatIssueTitleWithUrl(issue) + "**" + fmtLabels + LB
             report += text + LB + LB
@@ -126,7 +134,7 @@ async function weekly() {
     console.log(report)
 }
 
-const LABELS_TO_FILTER_OUT = ["epic", "good first issue", "help wanted", "track:protocol-incentivization"]
+const LABELS_TO_FILTER_OUT = ["epic", "good first issue", "help wanted", /^track:.*/]
 
 async function month(m) {
     const octokit = getOctokit();
