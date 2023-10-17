@@ -126,7 +126,7 @@ async function weekly() {
     console.log(report)
 }
 
-const LABELS_TO_FILTER_OUT = ["epic", "good first issue", "help wanted"]
+const LABELS_TO_FILTER_OUT = ["epic", "good first issue", "help wanted", "track:protocol-incentivization"]
 
 async function month(m) {
     const octokit = getOctokit();
