@@ -13,7 +13,6 @@ const {
     wasUpdatedInMonth,
     formatMonthlyReport, firstDayOfMonth, isMonthlyUpdateComment, getIssues, formatProjectName, getMonday, LB,
     compareRepos,
-    mapToTeamName,
     formatIssueTitleWithUrl,
     ContributorUpdates,
     formatCheckBox,
