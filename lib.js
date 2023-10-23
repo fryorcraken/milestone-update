@@ -140,7 +140,12 @@ async function getNewestCommentFirst(octokit, milestone, repoName, since) {
 
 function formatIssueTitleWithUrl(issue) {
     const title = issue.title.replace(/\[?milestone]?:? +/i, "").replace(/\[?epic]?:? +/i, "")
-    return "[" + title + "](" + issue.html_url + ")";
+
+    if (issue.html_url) {
+        return "[" + title + "](" + issue.html_url + ")";
+    } else {
+        return title;
+    }
 }
 
 function getMonday( ) {

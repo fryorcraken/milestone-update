@@ -117,7 +117,7 @@ async function weekly() {
     let report = ""
     let projectName = formatProjectName(org);
 
-    report += getMonday().toISOString().substring(0, 10) + " " + projectName + " weekly" + LB
+    report += "# " + getMonday().toISOString().substring(0, 10) + " " + projectName + " weekly" + LB + LB
 
     repos.sort(compareRepos)
 
@@ -144,9 +144,20 @@ async function weekly() {
     milestones.push({number: 0, title: "Other Work"})
     epicsByMilestone.set(0, [{epicLabel: "enhancement", title: "Enhancements"}, {epicLabel: "fix", title: "Fixes"}])
 
+    const issueMilestones = await getMilestoneIssues(octokit, org, milestoneRepo)
+
     // Format
     for (const milestone of milestones) {
-        report += "# " + milestone.title + LB + LB;
+        const issueMilestone = issueMilestones.find(i => i.html_url === milestone.description)
+        const title = issueMilestone ? formatIssueTitleWithUrl(issueMilestone) : milestone.title;
+
+        let fmtDueDate = ""
+        if (milestone.due_on) {
+            const dueDate = new Date(milestone.due_on);
+            fmtDueDate = " - " + dueDate.toISOString().substring(0, 10)
+        }
+
+        report += "## " + title + fmtDueDate + LB + LB;
 
         const epics = epicsByMilestone.get(milestone.number);
 
@@ -156,19 +167,19 @@ async function weekly() {
                 continue
             }
 
-            report += "## " + epic.title + LB + LB
+            report += "### " + formatIssueTitleWithUrl(epic) + LB + LB
             // Add updates
             for (const {issue, text} of updates) {
-                const labels = cleanLabels(issue)
-                const fmtLabels = labels ? labels.map(l => " {" + l + "}") : ""
-                report += "**" + formatIssueTitleWithUrl(issue) + "**" + fmtLabels + LB
+                if (epic.id !== issue.id) {
+                    const prefix = issue.repoName ? `[${issue.repoName}] ` : ""
+                    report += "**" + prefix + formatIssueTitleWithUrl(issue) + "**" + LB
+                }
                 report += text + LB + LB
             }
 
         }
 
     }
-    report += "---" + LB
 
     console.log(report)
 }
