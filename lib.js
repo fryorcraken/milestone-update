@@ -19,7 +19,7 @@ function getOctokit() {
 }
 
 getEpics = (octokit, org, repoName, options) => getIssues(octokit, org, repoName, {labels: "epic", ...options})
-getMilestones = (octokit, org, repoName, options) => getIssues(octokit, org, repoName, {labels: "milestone", ...options})
+getMilestoneIssues = (octokit, org, repoName, options) => getIssues(octokit, org, repoName, {labels: "milestone", ...options})
 
 async function getIssues(octokit, org, repoName, options) {
     const res = await octokit.request(`GET /repos/${org}/${repoName}/issues`, {
@@ -243,6 +243,33 @@ function epicLabels(issue) {
     return issue.labels.filter(({name}) => name.startsWith("E:"))
 }
 
+async function getMilestones(octokit, org, repoName) {
+    const res = await octokit.request(`GET /repos/${org}/${repoName}/milestones`, {
+        owner: org,
+        repo: repoName,
+        headers: {
+            'X-GitHub-Api-Version': '2022-11-28'
+        }
+    })
+    if (!res.data) throw new Error(`Failed to get milestones for ${repoName}, ${res}`)
+    return res.data;
+}
+
+const LABELS_TO_FILTER_OUT = ["epic", "good first issue", "help wanted", /^track:.*/]
+
+function cleanLabels(issue) {
+return     issue.labels.map(l => l.name).filter(n => {
+        return LABELS_TO_FILTER_OUT.find((test) => {
+            if (typeof test === 'string') {
+                return test === n
+            } else {
+                return test.test(n)
+            }
+        }) === undefined
+    })
+
+}
+
 const REPO_TEAM_MAP = new Map([
     ["docs.waku.org", "Docs"],
     ["internal-waku-outreach", "Eco Dev"],
@@ -301,6 +328,7 @@ class ContributorUpdates {
 
 module.exports = {
     getRepos,
+    getMilestoneIssues,
     getMilestones,
     lastFiveDaysIso,
     getNewestCommentFirst,
@@ -309,6 +337,7 @@ module.exports = {
     formatProjectName,
     getMonday,
     LB,
+    cleanLabels,
     mapToTeamName,
     compareRepos,
     formatMonthlyReport,

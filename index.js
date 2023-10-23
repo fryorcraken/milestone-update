@@ -1,18 +1,25 @@
 const {
     getRepos,
-    getMilestones,
+    getMilestoneIssues,
     lastFiveDaysIso,
     getNewestCommentFirst,
     isWeeklyUpdateComment,
     cleanUpdate,
     getOctokit,
-    formatMilestoneList,
+    getMilestones,
     getMilestoneLabel,
     getEpics,
     formatMilestoneByEpicList,
     wasUpdatedInMonth,
     formatMonthlyReport, firstDayOfMonth, isMonthlyUpdateComment, getIssues, formatProjectName, getMonday, LB,
-    compareRepos, mapToTeamName, formatIssueTitleWithUrl, ContributorUpdates, formatCheckBox, epicLabels, formatEpicList
+    compareRepos,
+    mapToTeamName,
+    formatIssueTitleWithUrl,
+    ContributorUpdates,
+    formatCheckBox,
+    epicLabels,
+    formatEpicList,
+    cleanLabels
 } = require("./lib");
 const {program} = require('commander');
 
@@ -65,7 +72,7 @@ async function weekly() {
     // Track contributor updates
     const contributorUpdates = new ContributorUpdates();
 
-    // Map<repoName, {issue, text}[]>
+    // Map<epicLabel, {issue, text}[]>
     const weeklyUpdates = new Map()
     // Get all weekly update comments
     for (const issue of issues) {
@@ -80,11 +87,22 @@ async function weekly() {
         }
 
         if (_weeklyUpdatesText.length !== 0) {
-            const _updates = weeklyUpdates.get(issue.repoName) ?? []
-            for (const text of _weeklyUpdatesText) {
-                _updates.push({text, issue})
+            let labels = epicLabels(issue).map(l => l.name)
+            if (!labels || !labels.length) {
+                labels = cleanLabels(issue)
+                console.log(labels)
             }
-            weeklyUpdates.set(issue.repoName, _updates)
+            if (!labels || !labels.length) {
+                throw "Issue with no labels: " + issue.html_url
+            }
+
+            for (const label of labels) {
+                const _updates = weeklyUpdates.get(label) ?? []
+                for (const text of _weeklyUpdatesText) {
+                    _updates.push({text, issue})
+                }
+                weeklyUpdates.set(label, _updates)
+            }
         }
     }
 
@@ -104,37 +122,59 @@ async function weekly() {
 
     repos.sort(compareRepos)
 
-    // Sort updates per repo
-    for (const repo of repos) {
-        const updates = weeklyUpdates.get(repo.name)
-        if (!updates || !updates.length) {
-            continue
-        }
-        report += "---" + LB
-        report += "### " + mapToTeamName(repo.name) + LB + LB
+    const milestoneRepo = "pm"
 
-        // Add milestones updates
-        for (const {issue, text} of updates) {
-            const labels = issue.labels.map(l => l.name).filter(n => {
-                return LABELS_TO_FILTER_OUT.find((test) => {
-                    if (typeof test === 'string') {
-                        return test === n
-                    } else {
-                        return test.test(n)
-                    }
-                }) === undefined
-            })
-            const fmtLabels = labels ? labels.map(l => " {" + l + "}") : ""
-            report += "**" + formatIssueTitleWithUrl(issue) + "**" + fmtLabels + LB
-            report += text + LB + LB
+    // Get all milestones
+    const milestones = await getMilestones(octokit, org, milestoneRepo)
+
+    // Get all epics
+    const epics = await getEpics(octokit, org, milestoneRepo)
+
+    // Sort epics by milestone
+    const epicsByMilestone = new Map()
+    for (const epic of epics) {
+        const labels = epicLabels(epic)
+        epic.epicLabel = labels[0]?.name ?? undefined
+
+        const milestoneNumber = epic.milestone?.number ?? 0
+        const _epics = epicsByMilestone.get(milestoneNumber) ?? []
+        _epics.push(epic)
+        epicsByMilestone.set(milestoneNumber, _epics)
+    }
+
+    milestones.push({number: 0, title: "Other Work"})
+    epicsByMilestone.set(0, [{epicLabel: "enhancement", title: "Enhancements"}, {epicLabel: "fix", title: "Fixes"}])
+
+    // Format
+    for (const milestone of milestones) {
+        report += "# " + milestone.title + LB + LB;
+
+        const epics = epicsByMilestone.get(milestone.number);
+
+        for (const epic of epics) {
+            const updates = weeklyUpdates.get(epic.epicLabel)
+            if (!updates || !updates.length) {
+                continue
+            }
+
+            report += "## " + epic.title + LB + LB
+            // Add updates
+            for (const {issue, text} of updates) {
+                const labels = cleanLabels(issue)
+                const fmtLabels = labels ? labels.map(l => " {" + l + "}") : ""
+                report += "**" + formatIssueTitleWithUrl(issue) + "**" + fmtLabels + LB
+                report += text + LB + LB
+            }
+
         }
+
     }
     report += "---" + LB
 
     console.log(report)
 }
 
-const LABELS_TO_FILTER_OUT = ["epic", "good first issue", "help wanted", /^track:.*/]
+
 
 async function month(m) {
     const octokit = getOctokit();
@@ -145,7 +185,7 @@ async function month(m) {
     const monthIndex = m - 1
 
     // Get all milestones
-    const milestones = await getMilestones(octokit, org, milestoneRepo)
+    const milestones = await getMilestoneIssues(octokit, org, milestoneRepo)
 
     const since = firstDayOfMonth(monthIndex)
 
@@ -253,7 +293,7 @@ async function listByMilestone() {
     const repos = await getRepos(octokit, org);
 
     // Get all milestones
-    const milestones = await getMilestones(octokit, org, milestoneRepo)
+    const milestones = await getMilestoneIssues(octokit, org, milestoneRepo)
 
     const milestoneToEpics = new Map()
 
