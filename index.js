@@ -159,6 +159,12 @@ async function weekly() {
 
         report += "## " + title + fmtDueDate + LB + LB;
 
+        const milestoneUpdates = weeklyUpdates.get("milestone");
+        const milestoneUpdate = milestoneUpdates.find(({issue}) => issue.id === issueMilestone?.id )
+        if (milestoneUpdate) {
+            report += milestoneUpdate.text + LB + LB
+        }
+
         const epics = epicsByMilestone.get(milestone.number);
 
         for (const epic of epics) {
