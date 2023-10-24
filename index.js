@@ -142,7 +142,7 @@ async function weekly() {
     }
 
     milestones.push({number: 0, title: "Other Work"})
-    epicsByMilestone.set(0, [{epicLabel: "enhancement", title: "Enhancements"}, {epicLabel: "fix", title: "Fixes"}])
+    epicsByMilestone.set(0, [{epicLabel: "enhancement", title: "Enhancements"}, {epicLabel: "bug", title: "Bugs"}])
 
     const issueMilestones = await getMilestoneIssues(octokit, org, milestoneRepo)
 
