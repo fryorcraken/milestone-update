@@ -92,7 +92,8 @@ async function weekly() {
                 console.log(labels)
             }
             if (!labels || !labels.length) {
-                throw "Issue with no labels: " + issue.html_url
+                console.error("Issue with no labels: " + issue.html_url)
+                continue;
             }
 
             for (const label of labels) {
@@ -160,9 +161,13 @@ async function weekly() {
         report += "## " + title + fmtDueDate + LB + LB;
 
         const milestoneUpdates = weeklyUpdates.get("milestone");
-        const milestoneUpdate = milestoneUpdates.find(({issue}) => issue.id === issueMilestone?.id )
-        if (milestoneUpdate) {
-            report += milestoneUpdate.text + LB + LB
+        if (milestoneUpdates) {
+            const milestoneUpdate = milestoneUpdates.find(({issue}) => issue.id === issueMilestone?.id )
+            if (milestoneUpdate) {
+                report += milestoneUpdate.text + LB + LB
+            }
+        } else {
+            console.error("Milestone update missing", milestoneUpdates)
         }
 
         const epics = epicsByMilestone.get(milestone.number);
