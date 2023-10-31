@@ -149,6 +149,7 @@ async function weekly() {
 
     // Format
     for (const milestone of milestones) {
+        if (milestone.number === 0) continue;
         const issueMilestone = issueMilestones.find(i => i.html_url === milestone.description)
         const title = issueMilestone ? formatIssueTitleWithUrl(issueMilestone) : milestone.title;
 
@@ -167,7 +168,7 @@ async function weekly() {
                 report += milestoneUpdate.text + LB + LB
             }
         } else {
-            console.error("Milestone update missing", milestoneUpdates)
+            console.error("Milestone update missing", issueMilestone?.html_url?? milestone.description)
         }
 
         const epics = epicsByMilestone.get(milestone.number);
