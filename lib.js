@@ -303,7 +303,8 @@ const CONTRIBUTORS = [
     "hackyguru",
     "SionoiS",
     "s-tikhomirov",
-    "alrevuelta"
+    "alrevuelta",
+    "adklempner"
 ]
 
 class ContributorUpdates {
