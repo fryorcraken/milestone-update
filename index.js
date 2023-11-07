@@ -171,6 +171,8 @@ async function weekly() {
             const milestoneUpdate = milestoneUpdates.find(({issue}) => issue.id === issueMilestone?.id )
             if (milestoneUpdate) {
                 report += milestoneUpdate.text + LB + LB
+            } else {
+                console.error("Milestone update missing", issueMilestone?.html_url?? milestone.description)
             }
         } else {
             console.error("Milestone update missing", issueMilestone?.html_url?? milestone.description)
