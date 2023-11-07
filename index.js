@@ -89,7 +89,7 @@ async function weekly() {
             let labels = epicLabels(issue).map(l => l.name)
             if (!labels || !labels.length) {
                 labels = cleanLabels(issue)
-                console.log(labels)
+                console.log(labels, issue.html_url)
             }
             if (!labels || !labels.length) {
                 console.error("Issue with no labels: " + issue.html_url)
@@ -143,13 +143,18 @@ async function weekly() {
     }
 
     milestones.push({number: 0, title: "Other Work"})
-    epicsByMilestone.set(0, [{epicLabel: "enhancement", title: "Enhancements"}, {epicLabel: "bug", title: "Bugs"}])
+    epicsByMilestone.set(0, [
+        {epicLabel: "enhancement", title: "Enhancements"},
+        {epicLabel: "bug", title: "Bugs"},
+        {epicLabel: "documentation", title: "Documentation"},
+        {epicLabel: "dependencies", title: "Chores"}
+    ])
 
     const issueMilestones = await getMilestoneIssues(octokit, org, milestoneRepo)
 
     // Format
     for (const milestone of milestones) {
-        if (milestone.number === 0) continue;
+
         const issueMilestone = issueMilestones.find(i => i.html_url === milestone.description)
         const title = issueMilestone ? formatIssueTitleWithUrl(issueMilestone) : milestone.title;
 
